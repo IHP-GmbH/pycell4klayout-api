@@ -44,7 +44,9 @@ from cni.shapefilter import *
 from cni.net import *
 
 import pya
+
 import sys
+import traceback
 
 class ChoiceConstraint(list):
 
@@ -135,11 +137,14 @@ class PyCellContext(object):
 
 class PCellWrapper(pya.PCellDeclaration):
 
-    def __init__(self, impl, tech):
+    def __init__(self, impl, tech, preProcPath = None, origPath = None):
         super(PCellWrapper, self).__init__()
 
         self._impl = impl
         self._impl.setTech(tech)
+        self._preProcPath = preProcPath
+        self._origPath = origPath
+
         self.tech = tech
 
         Tech.techInUse = tech.getTechParams()['libName']
@@ -147,7 +152,11 @@ class PCellWrapper(pya.PCellDeclaration):
         self.param_decls = []
 
         # NOTE: the PCellWrapper acts as the "specs" object
-        type(impl).defineParamSpecs(self)
+        try:
+            type(impl).defineParamSpecs(self)
+        except Exception:
+            self._printTraceBack()
+            exit(1)
 
     def __call__(self, name, value, description = None, constraint = None):
         # NOTE: this is calles from inside defineParamSpecs as we
@@ -179,6 +188,20 @@ class PCellWrapper(pya.PCellDeclaration):
 
         self.param_decls.append(param_decl)
 
+    def _printTraceBack(self):
+        lines = traceback.format_exc().splitlines()
+        firstLine = True
+        for line in lines:
+            if self._preProcPath is not None:
+                line = line.replace(self._preProcPath, self._origPath)
+            if firstLine:
+                line = "ERROR: " + line
+                firstLine = False
+            self._printRed(line)
+
+    def _printRed(self, text):
+        print("\033[91m {}\033[00m" .format(text))
+
     def get_parameters(self):
         return self.param_decls
 
@@ -195,10 +218,11 @@ class PCellWrapper(pya.PCellDeclaration):
 
     def produce(self, layout, layers, parameters, cell):
         params = self.params_as_hash(parameters)
-
-        with (PyCellContext(self.tech, cell, self._impl)):
-            self._impl.addCellContext(cell)
-            self._impl.setupParams(params)
-            self._impl.genLayout()
-
+        try:
+            with (PyCellContext(self.tech, cell, self._impl)):
+                self._impl.addCellContext(cell)
+                self._impl.setupParams(params)
+                self._impl.genLayout()
+        except Exception:
+            self._printTraceBack()
 
