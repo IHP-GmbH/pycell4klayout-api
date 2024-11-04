@@ -16,6 +16,8 @@
 #
 ########################################################################
 
+from __future__ import annotations
+
 from cni.constants import *
 from cni.location import *
 from cni.point import *
@@ -70,8 +72,9 @@ class Box(object):
         else:
             pya.Logger.warn(f"Box.destroy: already destroyed!")
 
-    def expand(self, coord):
-        raise Exception("Not implemented yet!")
+    def expand(self, coord) -> Box:
+        self.box = self.box.enlarge(coord);
+        return self.box
 
     def expandDir(self, dir, coord):
         raise Exception("Not implemented yet!")
