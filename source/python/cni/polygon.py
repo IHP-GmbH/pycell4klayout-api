@@ -61,6 +61,7 @@ class Polygon(Shape):
         if not self._polygon._destroyed():
             Shape.getCell().shapes(self.getShape().layer).erase(self.getShape())
             self._polygon._destroy()
+            super().destroy()
         else:
             pya.Logger.warn(f"Polygon.destroy: already destroyed!")
 

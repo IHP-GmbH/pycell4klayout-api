@@ -53,6 +53,7 @@ class Text(Shape):
         if not self._text._destroyed():
             Shape.getCell().shapes(self.getShape().layer).erase(self.getShape())
             self._text._destroy()
+            super().destroy()
         else:
             pya.Logger.warn(f"Text.destroy: already destroyed!")
 

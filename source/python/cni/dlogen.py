@@ -144,6 +144,13 @@ class Dlo(object):
         cellContext = self._getCurrentCellContext()
         cellContext.shapes.append(shape)
 
+    def removeShape(self, shape: Shape) -> None:
+        cellContext = self._getCurrentCellContext()
+        try:
+            cellContext.shapes.remove(shape)
+        except ValueError:
+            pass
+
     def addCellContext(self, cell):
         if cell in self._cellContexts:
             self._cellContexts.pop(cell)
@@ -172,7 +179,9 @@ class DloGen(Dlo):
 
     def getShapes(self) -> list[Shape]:
         cellContext = self._getCurrentCellContext()
-        return cellContext.shapes
+        shapes = []
+        [shapes.append(shape) for shape in cellContext.shapes]
+        return shapes
 
     def addPin(self, pinName : str, termName: str, box : Box, layer: Layer) -> Pin:
         pin = Pin(pinName, termName)

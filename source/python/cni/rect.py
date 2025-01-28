@@ -46,6 +46,7 @@ class Rect(Shape):
 
     def destroy(self):
         self._box.destroy()
+        super().destroy()
 
     def moveBy(self, dx: float, dy: float) -> None:
         self._box.moveBy(dx, dy)

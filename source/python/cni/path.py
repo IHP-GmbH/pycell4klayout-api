@@ -76,6 +76,7 @@ class Path(Shape):
         if not self._path._destroyed():
             Shape.getCell().shapes(self.getShape().layer).erase(self.getShape())
             self._path._destroy()
+            super().destroy()
         else:
             pya.Logger.warn(f"Path.destroy: already destroyed!")
 
