@@ -226,3 +226,5 @@ class PCellWrapper(pya.PCellDeclaration):
         except Exception:
             self._printTraceBack()
 
+    def wants_lazy_evaluation(self):
+        return True
