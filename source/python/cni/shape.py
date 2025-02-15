@@ -43,10 +43,15 @@ class Shape(PhysicalComponent):
         impl = cni.dlo.PyCellContext.getCurrentPyCellContext().impl
         impl.addShape(self)
 
-    def destroy(self):
+    def destroy(self) -> None:
         import cni.dlo
         impl = cni.dlo.PyCellContext.getCurrentPyCellContext().impl
         impl.removeShape(self)
+
+    def addShape(self) -> None:
+        import cni.dlo
+        impl = cni.dlo.PyCellContext.getCurrentPyCellContext().impl
+        impl.addShape(self)
 
     def set_shape(self, shape: Shape):
         self._shape = shape

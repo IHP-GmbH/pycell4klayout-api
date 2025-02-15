@@ -91,6 +91,7 @@ class Path(Shape):
         self.destroy()
         self._path = movedPath
         self.set_shape(shape)
+        self.addShape()
 
     def toString(self) -> str:
         return "Path: {}".format(self._path.to_s())
@@ -101,4 +102,5 @@ class Path(Shape):
         self.destroy()
         self._path = transformedPath
         self.set_shape(shape)
+        self.addShape()
 

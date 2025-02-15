@@ -34,7 +34,7 @@ class Text(Shape):
         self._layer = layer
         self._height = height
 
-        self. __internalInit()
+        self.__internalInit()
 
     def __internalInit(self):
         super().__init__(self._layer, Box(self._text.bbox().left, self._text.bbox().bottom, self._text.bbox().right, self._text.bbox().top))
@@ -63,6 +63,7 @@ class Text(Shape):
         self.destroy()
         self._text = movedText
         self.set_shape(shape)
+        self.addShape()
 
     def setAlignment(self, location: Location) -> None:
         width = len(self._text.string) * self._height
@@ -118,4 +119,8 @@ class Text(Shape):
         self.destroy()
         self._text = transformedText
         self.set_shape(shape)
+        self.addShape()
+
+    def getText(self) -> str:
+        return self._text.string
 

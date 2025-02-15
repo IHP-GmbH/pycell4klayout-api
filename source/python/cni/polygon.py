@@ -77,6 +77,7 @@ class Polygon(Shape):
         self.destroy()
         self._polygon = movedPolygon
         self.set_shape(shape)
+        self.addShape()
 
     def toString(self) -> str:
         return "Polygon: {}".format(self._polygon.to_s())
@@ -87,4 +88,5 @@ class Polygon(Shape):
         self.destroy()
         self._polygon = transformedPolygon
         self.set_shape(shape)
+        self.addShape()
 
