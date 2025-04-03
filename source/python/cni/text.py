@@ -68,34 +68,33 @@ class Text(Shape):
     def setAlignment(self, location: Location) -> None:
         width = len(self._text.string) * self._height
 
-        match location:
-            case Location.LOWER_LEFT:
-                self._text.halign = pya.HAlign.HAlignLeft
-                self._text.valign = pya.VAlign.VAlignBottom
-            case Location.CENTER_LEFT:
-                self._text.halign = pya.HAlign.HAlignLeft
-                self._text.valign = pya.VAlign.VAlignCenter
-            case Location.UPPER_LEFT:
-                self._text.halign = pya.HAlign.HAlignLeft
-                self._text.valign = pya.VAlign.VAlignTop
-            case Location.LOWER_CENTER:
-                self._text.halign = pya.HAlign.HAlignCenter
-                self._text.valign = pya.VAlign.VAlignBottom
-            case Location.CENTER_CENTER:
-                self._text.halign = pya.HAlign.HAlignCenter
-                self._text.valign = pya.VAlign.VAlignCenter
-            case Location.UPPER_CENTER:
-                self._text.halign = pya.HAlign.HAlignCenter
-                self._text.valign = pya.VAlign.VAlignTop
-            case Location.LOWER_RIGHT:
-                self._text.halign = pya.HAlign.HAlignRight
-                self._text.valign = pya.VAlign.VAlignBottom
-            case Location.CENTER_RIGHT:
-                self._text.halign = pya.HAlign.HAlignRight
-                self._text.valign = pya.VAlign.VAlignCenter
-            case Location.UPPER_RIGHT:
-                self._text.halign = pya.HAlign.HAlignRight
-                self._text.valign = pya.VAlign.VAlignTop
+        if location == Location.LOWER_LEFT:
+            self._text.halign = pya.HAlign.HAlignLeft
+            self._text.valign = pya.VAlign.VAlignBottom
+        elif location == Location.CENTER_LEFT:
+            self._text.halign = pya.HAlign.HAlignLeft
+            self._text.valign = pya.VAlign.VAlignCenter
+        elif location == Location.UPPER_LEFT:
+            self._text.halign = pya.HAlign.HAlignLeft
+            self._text.valign = pya.VAlign.VAlignTop
+        elif location == Location.LOWER_CENTER:
+            self._text.halign = pya.HAlign.HAlignCenter
+            self._text.valign = pya.VAlign.VAlignBottom
+        elif location == Location.CENTER_CENTER:
+            self._text.halign = pya.HAlign.HAlignCenter
+            self._text.valign = pya.VAlign.VAlignCenter
+        elif location == Location.UPPER_CENTER:
+            self._text.halign = pya.HAlign.HAlignCenter
+            self._text.valign = pya.VAlign.VAlignTop
+        elif location == Location.LOWER_RIGHT:
+            self._text.halign = pya.HAlign.HAlignRight
+            self._text.valign = pya.VAlign.VAlignBottom
+        elif location == Location.CENTER_RIGHT:
+            self._text.halign = pya.HAlign.HAlignRight
+            self._text.valign = pya.VAlign.VAlignCenter
+        elif location == Location.UPPER_RIGHT:
+            self._text.halign = pya.HAlign.HAlignRight
+            self._text.valign = pya.VAlign.VAlignTop
 
         layer = self.getShape().layer
 

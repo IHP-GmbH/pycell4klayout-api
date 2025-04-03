@@ -77,25 +77,24 @@ class Transform(object):
         self._orientation = orientation
         self._mag = magnification
 
-        match orientation:
-            case Orientation.R0:
-                self._transform = pya.DCplxTrans(magnification, 0, False, x, y)
-            case Orientation.R90:
-                self._transform = pya.DCplxTrans(magnification, 90, False, x, y)
-            case Orientation.R180:
-                self._transform = pya.DCplxTrans(magnification, 180, False, x, y)
-            case Orientation.R270:
-                self._transform = pya.DCplxTrans(magnification, 270, False, x, y)
-            case Orientation.MYR90:
-                self._transform = pya.DCplxTrans(magnification, 90, False, x, y) * pya.DCplxTrans.M90
-            case Orientation.MXR90:
-                self._transform = pya.DCplxTrans(magnification, 90, True, x, y)
-            case Orientation.MY:
-                self._transform = pya.DCplxTrans(magnification, 0, False, x, y) * pya.DCplxTrans.M90
-            case Orientation.MX:
-                self._transform = pya.DCplxTrans(magnification, 0, True, x, y)
-            case _:
-                raise Exception(f"Unknown orientation '{orientation}'")
+        if orientation == Orientation.R0:
+            self._transform = pya.DCplxTrans(magnification, 0, False, x, y)
+        elif orientation == Orientation.R90:
+            self._transform = pya.DCplxTrans(magnification, 90, False, x, y)
+        elif orientation == Orientation.R180:
+            self._transform = pya.DCplxTrans(magnification, 180, False, x, y)
+        elif orientation == Orientation.R270:
+            self._transform = pya.DCplxTrans(magnification, 270, False, x, y)
+        elif orientation == Orientation.MYR90:
+            self._transform = pya.DCplxTrans(magnification, 90, False, x, y) * pya.DCplxTrans.M90
+        elif orientation == Orientation.MXR90:
+            self._transform = pya.DCplxTrans(magnification, 90, True, x, y)
+        elif orientation == Orientation.MY:
+            self._transform = pya.DCplxTrans(magnification, 0, False, x, y) * pya.DCplxTrans.M90
+        elif orientation == Orientation.MX:
+            self._transform = pya.DCplxTrans(magnification, 0, True, x, y)
+        else:
+            raise Exception(f"Unknown orientation '{orientation}'")
 
     @property
     def transform(self):

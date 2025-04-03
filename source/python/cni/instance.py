@@ -105,25 +105,24 @@ class Instance():
         :type orientation: Orientation
 
         """
-        match orientation:
-            case Orientation.R0:
-                transform = pya.DTrans(0, False)
-            case Orientation.R90:
-                transform = pya.DTrans(90, False)
-            case Orientation.R180:
-                transform = pya.DTrans(180, False)
-            case Orientation.R270:
-                transform = pya.DTrans(270, False)
-            case Orientation.MYR90:
-                transform = pya.DTrans(90, False) * pya.DTrans.M90
-            case Orientation.MXR90:
-                transform = pya.DTrans(90, True)
-            case Orientation.MY:
-                transform = pya.DTrans(0, False) * pya.DTrans.M90
-            case Orientation.MX:
-                transform = pya.DTrans(0, True)
-            case _:
-                raise Exception(f"Unknown orientation '{orientation}'")
+        if orientation == Orientation.R0:
+            transform = pya.DTrans(0, False)
+        elif orientation == Orientation.R90:
+            transform = pya.DTrans(90, False)
+        elif orientation == Orientation.R180:
+            transform = pya.DTrans(180, False)
+        elif orientation == Orientation.R270:
+            transform = pya.DTrans(270, False)
+        elif orientation == Orientation.MYR90:
+            transform = pya.DTrans(90, False) * pya.DTrans.M90
+        elif orientation == Orientation.MXR90:
+            transform = pya.DTrans(90, True)
+        elif orientation == Orientation.MY:
+            transform = pya.DTrans(0, False) * pya.DTrans.M90
+        elif orientation == Orientation.MX:
+            transform = pya.DTrans(0, True)
+        else:
+            raise Exception(f"Unknown orientation '{orientation}'")
 
         Shape.getCell().transform(self._instance, transform)
 
