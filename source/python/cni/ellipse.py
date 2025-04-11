@@ -1,6 +1,6 @@
 ########################################################################
 #
-# Copyright 2024 IHP PDK Authors
+# Copyright 2025 IHP PDK Authors
 #
 # Licensed under the GNU General Public License, Version 3.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,37 +16,39 @@
 #
 ########################################################################
 
-from functools import singledispatchmethod
 from cni.shape import *
 from cni.layer import *
+from cni.box import *
+from cni.point import *
 from cni.pointlist import *
+
 from cni.tech import Tech
 
 import pya
-import copy
+#import copy
 
-class Polygon(Shape):
+class Ellipse(Shape):
 
-    @singledispatchmethod
-    def __init__(self, arg1, arg2, arg3 = None):
-        pass
+    def __init__(self, layer: Layer, box: Box) -> None:
 
-    @__init__.register
-    def _(self, arg1: Layer, arg2: PointList) -> None:
-        pyaPoints = []
-        [pyaPoints.append(point.point) for point in arg2]
-
-        self._polygon = pya.DSimplePolygon(pyaPoints, True)
-        self.__internalInit(arg1)
-
-    @__init__.register
-    def _(self, arg1: pya.DSimplePolygon, arg2: int, arg3: Layer) -> None:
-        self._polygon = arg1
-        self.__internalInit(arg3)
-
-    def __internalInit(self, layer: Layer):
-        super().__init__(layer, self._polygon.bbox())
+        self._polygon = pya.DSimplePolygon.ellipse(
+                pya.DBox(box.left, box.bottom, box.right, box.top), 64)
+        super().__init__(layer, box)
         self.set_shape(Shape.getCell().shapes(layer.number).insert(self._polygon))
+
+    @classmethod
+    def genPolygonPoints(cls, box: Box, numPoints: int, gridSize: float) -> PointList:
+        polygon = pya.DSimplePolygon.ellipse(
+                pya.DBox(box.left, box.bottom, box.right, box.top), numPoints)
+        region = pya.Region(polygon)
+
+        decimalGrid = int(gridSize / Tech.get(Tech.techInUse).dataBaseUnits)
+        region.snap(decimalGrid, decimalGrid)
+        snappedPolygon = region[0].to_simple_polygon()
+
+        pointList = PointList()
+        [pointList.append(Point(point.x, point.y)) for point in snappedPolygon.each_point()]
+        return pointList
 
     def addToRegion(self, region: pya.Region, filter: ShapeFilter):
         if filter.isIncluded(self._layer):
@@ -57,6 +59,7 @@ class Polygon(Shape):
         poly.__internalInit(poly.getLayer())
         return poly
 
+    """
     def destroy(self):
         if not self._polygon._destroyed():
             Shape.getCell().shapes(self.getShape().layer).erase(self.getShape())
@@ -69,6 +72,7 @@ class Polygon(Shape):
         pointList = PointList()
         [pointList.append(Point(point.x, point.y)) for point in self._polygon.each_point()]
         return pointList
+    """
 
     def moveBy(self, dx: float, dy: float) -> None:
         movedPolygon = (pya.DTrans(float(dx), float(dy)) * self._polygon)
@@ -81,7 +85,7 @@ class Polygon(Shape):
         self.addShape()
 
     def toString(self) -> str:
-        return "Polygon: {}".format(self._polygon.to_s())
+        return "Ellipse: {}".format(self._polygon.to_s())
 
     def transform(self, transform: Transform) -> None:
         transformedPolygon = self._polygon.transformed(transform.transform)

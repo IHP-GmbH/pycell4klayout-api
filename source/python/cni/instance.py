@@ -69,11 +69,12 @@ class Instance():
         if viewName != 'layout':
             raise Exception(f"View '{viewName}' not exists in library {libName}!")
 
-        cell = lib.layout().cell(cellName)
-        if cell is None:
+        pcell = lib.layout().pcell_declaration(cellName)
+        if pcell is None:
             raise Exception(f"Cell '{cellName}' don't exists in library '{libName}'!")
 
-        self._instance = Shape.getCell().insert(pya.DCellInstArray(cell, pya.DTrans()))
+        cellId = Shape.getCell().layout().add_pcell_variant(lib, pcell.id(), {})
+        self._instance = Shape.getCell().insert(pya.DCellInstArray(cellId, pya.DTrans()))
 
     def getParams(self) -> ParamArray:
         """

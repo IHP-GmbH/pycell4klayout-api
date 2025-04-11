@@ -22,6 +22,7 @@ from cni.ulist import *
 from cni.namemapper import NameMapper
 from cni.transform import Transform
 from cni.shapefilter import ShapeFilter
+from cni.layer import Layer
 
 import pya
 import re
@@ -70,7 +71,7 @@ class PhysicalComponent(ABC):
         import cni.geo
         return cni.geo.fgOr(components1, components2, resultLayer)
 
-    def fgXor(self, component: PhysicalComponent, resultLayer: Layer) -> Grouping:
+    def fgXor(self, component: PhysicalComponent, resultLayer: Layer, filter: ShapeFilter = ShapeFilter()) -> Grouping:
         """
         Performs a logical xor operation for this physical component and another physical component,
         by selecting those polygon areas which are in either physical component, but not in both
@@ -93,7 +94,7 @@ class PhysicalComponent(ABC):
         components2.append(component)
 
         import cni.geo
-        return cni.geo.fgXor(components1, components2, resultLayer)
+        return cni.geo.fgXor(components1, components2, resultLayer, filter)
 
     def fgAnd(self, component: PhysicalComponent, resultLayer: Layer) -> Grouping:
         """

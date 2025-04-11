@@ -33,7 +33,7 @@ class Shape(PhysicalComponent):
         return cni.dlo.PyCellContext.getCurrentPyCellContext().cell
 
     def __init__(self, layer: Layer, bbox: Box):
-        self._shape = None
+        self._shape = None  # pya.Shape
         self._layer = layer
         self._bbox = bbox
         self._net = None
@@ -53,7 +53,7 @@ class Shape(PhysicalComponent):
         impl = cni.dlo.PyCellContext.getCurrentPyCellContext().impl
         impl.addShape(self)
 
-    def set_shape(self, shape: Shape):
+    def set_shape(self, shape: pya.Shape):
         self._shape = shape
 
     def getShape(self):
@@ -100,3 +100,11 @@ class Shape(PhysicalComponent):
 
         """
         return self.getLayer()
+
+    @layer.setter
+    def layer(self, value):
+        """
+        Sets the layer of this shape
+
+        """
+        self._layer = value

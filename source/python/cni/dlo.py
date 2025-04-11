@@ -42,6 +42,8 @@ from cni.term import *
 from cni.path import *
 from cni.shapefilter import *
 from cni.net import *
+from cni.ellipse import *
+from cni.physicalrule import *
 
 import pya
 

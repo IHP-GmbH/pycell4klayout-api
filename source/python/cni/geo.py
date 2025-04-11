@@ -69,7 +69,7 @@ def fgAnd(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComp
     return __fgOperation(components1, components2, resultLayer, 'fgAnd')
 
 
-def fgXor(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComponent], resultLayer: Layer) -> Grouping:
+def fgXor(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComponent], resultLayer: Layer, filter1: ShapeFilter = ShapeFilter()) -> Grouping:
     """
     Performs a logical XOR operation for lists of physical components components1 and components2,
     by selecting those polygon areas which are in either list of physical components, but not in
@@ -88,7 +88,7 @@ def fgXor(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComp
 
     """
 
-    return __fgOperation(components1, components2, resultLayer, 'fgXor')
+    return __fgOperation(components1, components2, resultLayer, 'fgXor', filter1)
 
 
 def fgNot(components1: ulist[PhysicalComponent], components2: ulist[PhysicalComponent], resultLayer: Layer) -> Grouping:

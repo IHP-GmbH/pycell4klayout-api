@@ -64,7 +64,7 @@ class Path(Shape):
         self.set_shape(Shape.getCell().shapes(layer.number).insert(self._path))
 
     def addToRegion(self, region: pya.Region, filter: ShapeFilter):
-        if filter.isIncluded(self._shape.layer):
+        if filter.isIncluded(self._layer):
             region.insert(self._path.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
 
     def clone(self, nameMap : NameMapper = NameMapper(), netMap : NameMapper = NameMapper()):
