@@ -21,14 +21,14 @@ class Layer(object):
     tech = None
     layout = None
 
-    def __init__(self, name, purpose = None):
+    def __init__(self, name, purpose = 'drawing'):
         namePurpose = name if purpose is None else name + "." + purpose
         import cni.dlo
         layer, datatype = cni.dlo.PyCellContext.getCurrentPyCellContext().tech.stream_layers()[namePurpose]
 
-        self._name = namePurpose
+        self._name = name
         self._number = cni.dlo.PyCellContext.getCurrentPyCellContext().layout.layer(layer, datatype, namePurpose)
-        self._purposeName = "" if purpose is None else purpose
+        self._purposeName = purpose
 
     def getAttrs(self):
         raise Exception("Not implemented yet!")
@@ -58,7 +58,7 @@ class Layer(object):
         raise Exception("Not implemented yet!")
 
     def getPurposeName(self):
-        raise Exception("Not implemented yet!")
+        return self._purposeName
 
     def getPurposeNumber(self):
         raise Exception("Not implemented yet!")
