@@ -16,11 +16,12 @@
 #
 ########################################################################
 
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, List
+
 
 T = TypeVar('T')
 
-class ulist(list[T]):
+class ulist(List[T]):
 
     def __init__(self, items = None) -> None:
         if items is not None:
