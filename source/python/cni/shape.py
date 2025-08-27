@@ -35,7 +35,13 @@ class Shape(PhysicalComponent):
     def __init__(self, layer: Layer, bbox: Box):
         self._shape = None  # pya.Shape
         self._layer = layer
-        self._bbox = bbox
+
+        if isinstance(bbox, Box):
+            self._bbox = bbox
+        elif isinstance(bbox, pya.DBox):
+            self._bbox = Box(bbox.left, bbox.bottom, bbox.right, bbox.top)
+        else:
+            raise NotImplementedError()
         self._net = None
         self._pin = None
 
