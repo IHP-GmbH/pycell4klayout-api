@@ -25,6 +25,8 @@ from cni.term import *
 
 import pya
 
+import os
+
 class Dlo(object):
 
     class _CellContext:

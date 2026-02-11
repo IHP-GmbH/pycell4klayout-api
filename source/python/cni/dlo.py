@@ -49,6 +49,11 @@ import pya
 
 import sys
 import traceback
+import tkinter
+import re
+import pathlib
+import os
+import json
 
 class ChoiceConstraint(list):
 
@@ -138,9 +143,26 @@ class PyCellContext(object):
 
 
 class PCellWrapper(pya.PCellDeclaration):
+    _tcl = None
+    _callBackPath = None
+    _cellMap = {}
+    _callbackMap = {}
+    _tech = None
+
+    _klayoutRootPath = pathlib.Path(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..'))
+    for file in _klayoutRootPath.rglob("parameters.tcl"):
+        if _callBackPath is not None:
+            raise Exception("multiple callback location found!")
+        _callBackPath = pathlib.Path(os.path.normpath(file)).parent
 
     def __init__(self, impl, tech, preProcPath = None, origPath = None):
         super(PCellWrapper, self).__init__()
+
+        implStr = f"{type(impl)}"
+
+        result = re.search(r"\.(\w+)\W*$", implStr)
+        if result != None:
+            PCellWrapper._cellMap[self] = result.group(1)
 
         self._impl = impl
         self._impl.setTech(tech)
@@ -148,10 +170,11 @@ class PCellWrapper(pya.PCellDeclaration):
         self._origPath = origPath
 
         self.tech = tech
+        PCellWrapper._tech = tech
 
         Tech.techInUse = tech.getTechParams()['libName']
 
-        self.param_decls = []
+        self._paramDecls = []
 
         # NOTE: the PCellWrapper acts as the "specs" object
         try:
@@ -176,19 +199,47 @@ class PCellWrapper(pya.PCellDeclaration):
             print(f"Invalid parameter type for parameter {name} (value is {repr(value)})")
             assert(False)
 
-        param_decl = pya.PCellParameterDeclaration(name, value_type, description, value)
+        paramDecl = pya.PCellParameterDeclaration(name, value_type, description, value)
 
         if type(constraint) is ChoiceConstraint:
             for v in constraint:
-                param_decl.add_choice(repr(v), v)
+                paramDecl.add_choice(repr(v), v)
         elif type(constraint) is RangeConstraint:
             if constraint.action is REJECT:
                 if constraint.low is not None:
-                    param_decl.min_value = constraint.low
+                    paramDecl.min_value = constraint.low
                 if constraint.high is not None:
-                    param_decl.max_value = constraint.high
+                    paramDecl.max_value = constraint.high
 
-        self.param_decls.append(param_decl)
+        self._paramDecls.append(paramDecl)
+
+    @staticmethod
+    def _initializeCallbacks():
+        callbacksDefPath = os.path.join(PCellWrapper._callBackPath, "callbacks.json")
+
+        if os.path.exists(callbacksDefPath):
+            try:
+                with open(callbacksDefPath, "r") as callbackFile:
+                    jsData = json.load(callbackFile)
+
+                    modules = jsData["moduleList"]
+                    for module in modules:
+                        modulePath = os.path.join(PCellWrapper._callBackPath, f"{module}")
+                        PCellWrapper._tcl.eval(f"source {modulePath}")
+
+                    callbacks = jsData["callbackDefinition"]["callbackList"]
+                    for callback in callbacks:
+                        PCellWrapper._callbackMap[callback["device"]] = callback
+
+                parameters = {}
+                for key, value in PCellWrapper._tech.getTechParams().items():
+                    parameters[key] = value
+
+                PCellWrapper._tcl.eval(f"setTechParameters {parameters}")
+                PCellWrapper._tcl.eval(f"setCniPythonPath {os.path.normpath(os.path.dirname(__file__))}")
+
+            except Exception as exc:
+                raise Exception(f"Invalid Json syntax: '{exc}' in {callbacksDefPath}")
 
     def _printTraceBack(self):
         lines = traceback.format_exc().splitlines()
@@ -205,12 +256,12 @@ class PCellWrapper(pya.PCellDeclaration):
         print("\033[91m {}\033[00m" .format(text))
 
     def get_parameters(self):
-        return self.param_decls
+        return self._paramDecls
 
-    def params_as_hash(self,parameters):
+    def params_as_hash(self, parameters):
         params = {}
-        for i in range(0, len(self.param_decls)):
-            params[self.param_decls[i].name] = parameters[i]
+        for i in range(0, len(self._paramDecls)):
+            params[self._paramDecls[i].name] = parameters[i]
         return params
 
     def display_text(self, parameters):
@@ -227,6 +278,41 @@ class PCellWrapper(pya.PCellDeclaration):
                 self._impl.genLayout()
         except Exception:
             self._printTraceBack()
+
+    def coerce_parameters(self, layout, parameterValues):
+        if PCellWrapper._tcl is None:
+            PCellWrapper._tcl = tkinter.Tcl()
+            PCellWrapper._initializeCallbacks()
+
+        if PCellWrapper._cellMap[self] in PCellWrapper._callbackMap.keys():
+            PCellWrapper._tcl.eval(f"setCurrentInstancedName {self.name()}")
+
+            parameters = {}
+            idx = 0
+            for paramDecl in self._paramDecls:
+                parameters[paramDecl.name] = parameterValues[idx]
+                idx = idx + 1
+
+            PCellWrapper._tcl.eval(f"setCurrentCellParameters {parameters}")
+
+            callback = PCellWrapper._callbackMap[PCellWrapper._cellMap[self]]
+            for parameter in callback["pcellParameters"]:
+                PCellWrapper._tcl.eval(f"{callback['callback']} {parameter}")
+
+            coercedParameters = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
+
+            coercedParameters = coercedParameters.split();
+
+            isValue = False
+            parameterValues.clear();
+            for value in coercedParameters:
+                if isValue:
+                    if value == "{}":
+                        value = ""
+                    parameterValues.append(value)
+                isValue = not isValue
+
+        return parameterValues
 
     def wants_lazy_evaluation(self):
         return True

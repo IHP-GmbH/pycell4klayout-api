@@ -164,6 +164,9 @@ class Numeric(float):
         else:
             return self
 
+    def sciFormat(self, precision = 8) :
+        return "%.*e" % (precision, self)
+
     @property
     def scaleFactor(self):
         """
