@@ -309,6 +309,10 @@ class PCellWrapper(pya.PCellDeclaration):
                 if isValue:
                     if value == "{}":
                         value = ""
+                    # Tcl treads all simple values as strings, so if a callback-value can convert
+                    # to integer convert it to an integer
+                    if re.search(r"^-?[0-9]+$", value) != None:
+                        value = int(value)
                     parameterValues.append(value)
                 isValue = not isValue
 
