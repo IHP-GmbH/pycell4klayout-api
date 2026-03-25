@@ -55,6 +55,7 @@ import pathlib
 import os
 import json
 
+
 class ChoiceConstraint(list):
 
     def __init__(self, choices, action = REJECT):
@@ -145,9 +146,13 @@ class PyCellContext(object):
 class PCellWrapper(pya.PCellDeclaration):
     _tcl = None
     _callBackPath = None
-    _cellMap = {}
     _callbackMap = {}
     _tech = None
+    _intType = type(1)
+    _floatType = type(1.1)
+    _strType = type("str")
+    _boolType = type(True)
+    _parameterTypeList = []
 
     _klayoutRootPath = pathlib.Path(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..'))
     for file in _klayoutRootPath.rglob("parameters.tcl"):
@@ -158,16 +163,12 @@ class PCellWrapper(pya.PCellDeclaration):
     def __init__(self, impl, tech, preProcPath = None, origPath = None):
         super(PCellWrapper, self).__init__()
 
-        implStr = f"{type(impl)}"
-
-        result = re.search(r"\.(\w+)\W*$", implStr)
-        if result != None:
-            PCellWrapper._cellMap[self] = result.group(1)
-
         self._impl = impl
         self._impl.setTech(tech)
         self._preProcPath = preProcPath
         self._origPath = origPath
+        self._changedCell = None
+        self._changedParameter = None
 
         self.tech = tech
         PCellWrapper._tech = tech
@@ -227,8 +228,8 @@ class PCellWrapper(pya.PCellDeclaration):
                         modulePath = os.path.join(PCellWrapper._callBackPath, f"{module}")
                         PCellWrapper._tcl.eval(f"source {modulePath}")
 
-                    callbacks = jsData["callbackDefinition"]["callbackList"]
-                    for callback in callbacks:
+                    callbackList = jsData["callbackDefinition"]["callbackList"]
+                    for callback in callbackList:
                         PCellWrapper._callbackMap[callback["device"]] = callback
 
                 parameters = {}
@@ -279,25 +280,45 @@ class PCellWrapper(pya.PCellDeclaration):
         except Exception:
             self._printTraceBack()
 
+    def callback(self, layout, name, pcellParameterStates):
+        if self.name() in PCellWrapper._callbackMap.keys():
+            if pcellParameterStates.has_parameter(name):
+                self._changedCell = self.name()
+                self._changedParameter = name
+
     def coerce_parameters(self, layout, parameterValues):
         if PCellWrapper._tcl is None:
             PCellWrapper._tcl = tkinter.Tcl()
             PCellWrapper._initializeCallbacks()
 
-        if PCellWrapper._cellMap[self] in PCellWrapper._callbackMap.keys():
+        if self.name() in PCellWrapper._callbackMap.keys():
             PCellWrapper._tcl.eval(f"setCurrentInstancedName {self.name()}")
 
             parameters = {}
+            PCellWrapper._parameterTypeList.clear()
             idx = 0
+
             for paramDecl in self._paramDecls:
-                parameters[paramDecl.name] = parameterValues[idx]
+                parameterValue = parameterValues[idx]
+                parameterType = type(parameterValue)
+                PCellWrapper._parameterTypeList.append(parameterType)
+                if parameterType == PCellWrapper._strType:
+                    numSpaces = len(parameterValue)
+                    if parameterValue.isspace() or numSpaces == 0:
+                        parameterValue = f"__isspace__{numSpaces}__"
+                parameters[paramDecl.name] = parameterValue
                 idx = idx + 1
 
             PCellWrapper._tcl.eval(f"setCurrentCellParameters {parameters}")
 
-            callback = PCellWrapper._callbackMap[PCellWrapper._cellMap[self]]
-            for parameter in callback["pcellParameters"]:
-                PCellWrapper._tcl.eval(f"{callback['callback']} {parameter}")
+            deviceCallbacks = PCellWrapper._callbackMap[self.name()]
+            for callback in deviceCallbacks["callbacks"]:
+                parameterToUse = self._changedParameter
+                if parameterToUse is None:
+                    parameterToUse = callback['pcellParameters'][0]
+                #print(f"enter callback {callback['callback']} for parameter {parameterToUse}")
+                PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
+            self._changedParameter = None
 
             coercedParameters = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
 
@@ -305,15 +326,24 @@ class PCellWrapper(pya.PCellDeclaration):
 
             isValue = False
             parameterValues.clear();
+            idx = 0
             for value in coercedParameters:
                 if isValue:
-                    if value == "{}":
-                        value = ""
-                    # Tcl treads all simple values as strings, so if a callback-value can convert
-                    # to integer convert it to an integer
-                    if re.search(r"^-?[0-9]+$", value) != None:
+                    valueType = type(value)
+                    groups = re.search(r"__isspace__(\d+)", value)
+                    if groups != None:
+                        value = ' ' * int(groups.group(1))
+                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
                         value = int(value)
+                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._floatType:
+                        value = float(value)
+                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._strType:
+                        value = str(value)
+                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._boolType:
+                        value = bool(value)
+
                     parameterValues.append(value)
+                    idx = idx + 1
                 isValue = not isValue
 
         return parameterValues
