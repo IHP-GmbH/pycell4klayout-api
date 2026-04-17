@@ -40,6 +40,9 @@ class Grouping(PhysicalComponent):
     def __next__(self):
         return self._components.__next__()
 
+    def __getitem__(self, key):
+        return self._components.__getitem__(key)
+
     def add(self, components: PhysicalComponent) -> None:
         if type(components) is not list:
             self._components.append(components)

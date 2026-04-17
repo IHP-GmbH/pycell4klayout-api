@@ -25,12 +25,10 @@ from cni.pointlist import *
 from cni.tech import Tech
 
 import pya
-#import copy
 
 class Ellipse(Shape):
 
     def __init__(self, layer: Layer, box: Box) -> None:
-
         self._polygon = pya.DSimplePolygon.ellipse(
                 pya.DBox(box.left, box.bottom, box.right, box.top), 64)
         super().__init__(layer, box)

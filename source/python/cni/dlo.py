@@ -230,7 +230,8 @@ class PCellWrapper(pya.PCellDeclaration):
 
                     callbackList = jsData["callbackDefinition"]["callbackList"]
                     for callback in callbackList:
-                        PCellWrapper._callbackMap[callback["device"]] = callback
+                        for device in callback["devices"]:
+                            PCellWrapper._callbackMap[device] = callback
 
                 parameters = {}
                 for key, value in PCellWrapper._tech.getTechParams().items():
@@ -313,11 +314,15 @@ class PCellWrapper(pya.PCellDeclaration):
 
             deviceCallbacks = PCellWrapper._callbackMap[self.name()]
             for callback in deviceCallbacks["callbacks"]:
-                parameterToUse = self._changedParameter
-                if parameterToUse is None:
-                    parameterToUse = callback['pcellParameters'][0]
-                #print(f"enter callback {callback['callback']} for parameter {parameterToUse}")
-                PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
+                if len(callback['pcellParameters']) != 0:
+                    parameterToUse = self._changedParameter
+                    if parameterToUse is None:
+                        parameterToUse = callback['pcellParameters'][0]
+                    #print(f"enter callback {callback['callback']} for parameter {parameterToUse}")
+                    PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
+                else:
+                    #print(f"enter callback {callback['callback']}")
+                    PCellWrapper._tcl.eval(f"{callback['callback']}")
             self._changedParameter = None
 
             coercedParameters = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
