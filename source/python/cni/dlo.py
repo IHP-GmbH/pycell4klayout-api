@@ -304,9 +304,14 @@ class PCellWrapper(pya.PCellDeclaration):
                 parameterType = type(parameterValue)
                 PCellWrapper._parameterTypeList.append(parameterType)
                 if parameterType == PCellWrapper._strType:
-                    numSpaces = len(parameterValue)
-                    if parameterValue.isspace() or numSpaces == 0:
-                        parameterValue = f"__isspace__{numSpaces}__"
+                    if len(parameterValue) == 0:
+                        # Empty parameters breaks the Python-Tcl-Mapping, instead special
+                        # unicode characters are used
+                        parameterValue = chr(0x2717)
+                    else:
+                        # Parameters with spaces breaks the Python-Tcl-Mapping, instead special
+                        # unicode characters are used
+                        parameterValue = parameterValue.replace(" ", f"{chr(0x2709)}")
                 parameters[paramDecl.name] = parameterValue
                 idx = idx + 1
 
@@ -335,10 +340,12 @@ class PCellWrapper(pya.PCellDeclaration):
             for value in coercedParameters:
                 if isValue:
                     valueType = type(value)
-                    groups = re.search(r"__isspace__(\d+)", value)
-                    if groups != None:
-                        value = ' ' * int(groups.group(1))
-                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
+                    if value == chr(0x2717):
+                        value = ''
+                    else:
+                        value = value.replace(f"{chr(0x2709)}", " ")
+
+                    if PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
                         value = int(value)
                     elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._floatType:
                         value = float(value)
