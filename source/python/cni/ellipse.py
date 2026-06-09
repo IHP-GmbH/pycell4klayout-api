@@ -38,11 +38,12 @@ class Ellipse(Shape):
     def genPolygonPoints(cls, box: Box, numPoints: int, gridSize: float) -> PointList:
         polygon = pya.DSimplePolygon.ellipse(
                 pya.DBox(box.left, box.bottom, box.right, box.top), numPoints)
-        region = pya.Region(polygon)
+        region = pya.Region()
+        region.insert(polygon.to_itype(Tech.get(Tech.techInUse).dataBaseUnits))
 
         decimalGrid = int(gridSize / Tech.get(Tech.techInUse).dataBaseUnits)
         region.snap(decimalGrid, decimalGrid)
-        snappedPolygon = region[0].to_simple_polygon()
+        snappedPolygon = region[0].to_simple_polygon().to_dtype(Tech.get(Tech.techInUse).dataBaseUnits)
 
         pointList = PointList()
         [pointList.append(Point(point.x, point.y)) for point in snappedPolygon.each_point()]
@@ -57,7 +58,6 @@ class Ellipse(Shape):
         poly.__internalInit(poly.getLayer())
         return poly
 
-    """
     def destroy(self):
         if not self._polygon._destroyed():
             Shape.getCell().shapes(self.getShape().layer).erase(self.getShape())
@@ -70,7 +70,6 @@ class Ellipse(Shape):
         pointList = PointList()
         [pointList.append(Point(point.x, point.y)) for point in self._polygon.each_point()]
         return pointList
-    """
 
     def moveBy(self, dx: float, dy: float) -> None:
         movedPolygon = (pya.DTrans(float(dx), float(dy)) * self._polygon)
