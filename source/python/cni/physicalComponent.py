@@ -31,7 +31,7 @@ class PhysicalComponent(ABC):
 
     def __getattr__(self, name):
         if re.fullmatch(r'__(\S*)__', name):
-            return super.__getattr__(name)
+            return super().__getattr__(name)
         else:
             return False
 
