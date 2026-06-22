@@ -309,9 +309,11 @@ class PCellWrapper(pya.PCellDeclaration):
                         # unicode characters are used
                         parameterValue = chr(0x2717)
                     else:
-                        # Parameters with spaces breaks the Python-Tcl-Mapping, instead special
-                        # unicode characters are used
+                        # Parameters with spaces or square brackets  breaks the Python-Tcl-Mapping,
+                        # instead special unicode characters are used
                         parameterValue = parameterValue.replace(" ", f"{chr(0x2709)}")
+                        parameterValue = parameterValue.replace("[", f"{chr(0x2772)}")
+                        parameterValue = parameterValue.replace("]", f"{chr(0x2773)}")
                 parameters[paramDecl.name] = parameterValue
                 idx = idx + 1
 
@@ -319,15 +321,21 @@ class PCellWrapper(pya.PCellDeclaration):
 
             deviceCallbacks = PCellWrapper._callbackMap[self.name()]
             for callback in deviceCallbacks["callbacks"]:
-                if len(callback['pcellParameters']) != 0:
+                for pcellParameter in callback['pcellParameters']:
                     parameterToUse = self._changedParameter
                     if parameterToUse is None:
-                        parameterToUse = callback['pcellParameters'][0]
-                    #print(f"enter callback {callback['callback']} for parameter {parameterToUse}")
-                    PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
-                else:
-                    #print(f"enter callback {callback['callback']}")
-                    PCellWrapper._tcl.eval(f"{callback['callback']}")
+                        parameterToUse = pcellParameter
+                    else:
+                        if parameterToUse != pcellParameter:
+                            continue
+                    if callback['usePcellParameterAsArgument'] == 'true':
+                        #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {parameterToUse}")
+                        PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
+                    else:
+                        #print(f"enter callback {callback['callback']} for cell {self.name()}")
+                        PCellWrapper._tcl.eval(f"{callback['callback']}")
+                    if self._changedParameter is None:
+                        break
             self._changedParameter = None
 
             coercedParameters = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
@@ -344,6 +352,8 @@ class PCellWrapper(pya.PCellDeclaration):
                         value = ''
                     else:
                         value = value.replace(f"{chr(0x2709)}", " ")
+                        value = value.replace(f"{chr(0x2772)}", "[")
+                        value = value.replace(f"{chr(0x2773)}", "]")
 
                     if PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
                         value = int(value)
