@@ -329,6 +329,11 @@ class PCellWrapper(pya.PCellDeclaration):
                         if parameterToUse != pcellParameter:
                             continue
                     if callback['usePcellParameterAsArgument'] == 'true':
+                        if 'parameterMappings' in callback:
+                            for mapping in callback['parameterMappings']:
+                                paramerMapping = mapping.split(f"{chr(0x279c)}")
+                                if paramerMapping[0] == parameterToUse:
+                                    parameterToUse = paramerMapping[1]
                         #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {parameterToUse}")
                         PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
                     else:
