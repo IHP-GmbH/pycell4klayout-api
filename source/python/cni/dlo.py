@@ -238,7 +238,7 @@ class PCellWrapper(pya.PCellDeclaration):
                     parameters[key] = value
 
                 PCellWrapper._tcl.eval(f"setTechParameters {parameters}")
-                PCellWrapper._tcl.eval(f"setCniPythonPath {os.path.normpath(os.path.dirname(__file__))}")
+                PCellWrapper._tcl.eval(f"setCniPythonPath \"{os.path.normpath(os.path.dirname(__file__))}\"")
 
             except Exception as exc:
                 raise Exception(f"Invalid Json syntax: '{exc}' in {callbacksDefPath}")
