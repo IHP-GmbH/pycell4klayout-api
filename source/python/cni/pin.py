@@ -23,8 +23,19 @@ from cni.term import Term
 from cni.box import Box
 from cni.layer import Layer
 from cni.ulist import ulist
+from cni.tech import Tech
+
+from cni.constants import (
+    PROPERTY_KEY__PIN_INFO__VERSION,
+    PROPERTY_KEY__PIN_INFO__LIB_NAME ,
+    PROPERTY_KEY__PIN_INFO__CELL_NAME,
+    PROPERTY_KEY__PIN_INFO__PIN_NAME,
+    PROPERTY_KEY__PIN_INFO__TERM_NAME,
+    PROPERTY_VALUE__PIN_INFO__CURRENT_VERSION,
+)
 
 import pya
+
 
 class Pin(object):
     """
@@ -98,6 +109,26 @@ class Pin(object):
         self._bbox = box
         self._layers.append(layer)
 
+        import cni.dlo
+        ctx = cni.dlo.PyCellContext.getCurrentPyCellContext()
+        cell = ctx.cell
+        
+        # store connectivity information (e.g. used by KLayout Connectivity / Flywire Plugin)
+        lib_name = ctx.tech.getTechParams()['libName']
+        props = {
+            PROPERTY_KEY__PIN_INFO__VERSION: PROPERTY_VALUE__PIN_INFO__CURRENT_VERSION,
+            PROPERTY_KEY__PIN_INFO__LIB_NAME: lib_name,
+            PROPERTY_KEY__PIN_INFO__CELL_NAME: cell.name,
+            PROPERTY_KEY__PIN_INFO__PIN_NAME: self._name,
+            PROPERTY_KEY__PIN_INFO__TERM_NAME: self.getTerm().getName(),
+        }
+        
+        dbu = ctx.tech.dataBaseUnits
+        pya_box = pya.DBox(box.left, box.bottom, box.right, box.top).to_itype(dbu)
+        shape = cell.shapes(layer.number).insert(pya.BoxWithProperties(pya_box, props))
+        
+        self._shapes.append(shape)        
+    
     def getBBox(self) -> Box:
         return self._bbox
 
