@@ -88,6 +88,10 @@ class Numeric(float):
 
     _scaleFactors = "yzafpnumc%kKMGTPEZY"
 
+    # Scaling characters with a multiplier of 1e3 and above. Used to recognise the
+    # engineering notation KLayout produces for PCell parameter strings, see _calcValue().
+    _largeScaleFactors = "kKMGTPEZY"
+
     def __new__(cls, value):
         """
         Numeric(int | float | string) – creates a Numeric object, based upon the specified number
@@ -102,6 +106,23 @@ class Numeric(float):
         instance._scaleFactor = scaleFactor
         instance._numberPart = numberPart
         return instance
+
+    @classmethod
+    def _scaleExp(cls, scale):
+        if scale == "c" or scale == "%":
+            return -2
+
+        if scale == "k":
+            scale = "K"
+
+        exp = -1
+
+        for i in cls._scaleFactors.replace('c', '').replace('%', ' ').replace('k', ''):
+            exp += 1
+            if i is scale:
+                break
+
+        return (exp - 8) * 3
 
     @classmethod
     def _calcValue(cls, value):
@@ -122,20 +143,21 @@ class Numeric(float):
                 scale = match.group(2)
                 scaleFactor = scale;
 
-                if scale == "c" or scale == "%":
-                    exp = -2
-                else:
-                    if scale == "k":
-                        scale = "K"
+                exp = cls._scaleExp(scale)
 
-                    exp = -1
+                # KLayout renders PCell parameter strings in engineering notation, so a value
+                # of 1550u is handed back to the PCell as '1.55ku': a magnifying prefix
+                # followed by the original scaling character. Read as a single scale factor
+                # that string means 1.55 kilo, i.e. a factor 1e6 too large, which overflows
+                # the layout coordinate range for dies of 1 mm and above.
+                # Only a magnifying prefix followed by exactly one further scaling character
+                # is treated as such a compound factor, so descriptive suffixes ('mVolt') and
+                # spelled-out units ('25um') keep their documented meaning.
+                rest = match.group(3)
 
-                    for i in cls._scaleFactors.replace('c', '').replace('%', ' ').replace('k', ''):
-                        exp += 1
-                        if i is scale:
-                            break
-
-                    exp = (exp - 8) * 3
+                if rest and len(rest) == 1 and scale in cls._largeScaleFactors and rest in cls._scaleFactors:
+                    scaleFactor = scale + rest
+                    exp += cls._scaleExp(rest)
 
         try:
             number = float(numberPart)
