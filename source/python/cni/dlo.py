@@ -319,6 +319,8 @@ class PCellWrapper(pya.PCellDeclaration):
 
             PCellWrapper._tcl.eval(f"setCurrentCellParameters {parameters}")
 
+            #print(f"setCurrentCellParameters: {parameters}")
+
             deviceCallbacks = PCellWrapper._callbackMap[self.name()]
             for callback in deviceCallbacks["callbacks"]:
                 for pcellParameter in callback['pcellParameters']:
@@ -328,7 +330,7 @@ class PCellWrapper(pya.PCellDeclaration):
                     else:
                         if parameterToUse != pcellParameter:
                             continue
-                    if callback['usePcellParameterAsArgument'] == 'true':
+                    if callback['usePcellParameterAsArgument'] == 'true' or callback['usePcellParameterAsArgument'] == 'yes':
                         if 'parameterMappings' in callback:
                             for mapping in callback['parameterMappings']:
                                 paramerMapping = mapping.split(f"{chr(0x279c)}")
@@ -336,6 +338,9 @@ class PCellWrapper(pya.PCellDeclaration):
                                     parameterToUse = paramerMapping[1]
                         #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {parameterToUse}")
                         PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
+                    elif 'parameterValue' in callback:
+                        #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {callback['parameterValue']}")
+                        PCellWrapper._tcl.eval(f"{callback['callback']} {callback['parameterValue']}")
                     else:
                         #print(f"enter callback {callback['callback']} for cell {self.name()}")
                         PCellWrapper._tcl.eval(f"{callback['callback']}")
@@ -344,6 +349,8 @@ class PCellWrapper(pya.PCellDeclaration):
             self._changedParameter = None
 
             coercedParameters = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
+
+            #print(f"getCurrentCellParameters: {coercedParameters}")
 
             coercedParameters = coercedParameters.split();
 
