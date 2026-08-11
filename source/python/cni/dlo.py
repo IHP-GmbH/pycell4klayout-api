@@ -360,10 +360,13 @@ class PCellWrapper(pya.PCellDeclaration):
                         value = value.replace(f"{chr(0x2772)}", "[")
                         value = value.replace(f"{chr(0x2773)}", "]")
 
+                    # NOTE: the callback returns the value the way it is spelled in the
+                    #       parameter definition, so a parameter declared as '0.15u' comes
+                    #       back scaled ('6.0u'), which the builtin conversions reject.
                     if PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
-                        value = int(value)
+                        value = int(Numeric(value))
                     elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._floatType:
-                        value = float(value)
+                        value = float(Numeric(value))
                     elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._strType:
                         value = str(value)
                     elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._boolType:
