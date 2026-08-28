@@ -49,7 +49,10 @@ import pya
 
 import sys
 import traceback
-import tkinter
+try:
+    import tkinter
+except ImportError:
+    print("Could not import tkinter. No callback support.")
 import re
 import pathlib
 import os
@@ -288,97 +291,98 @@ class PCellWrapper(pya.PCellDeclaration):
                 self._changedParameter = name
 
     def coerce_parameters(self, layout, parameterValues):
-        if PCellWrapper._tcl is None:
-            PCellWrapper._tcl = tkinter.Tcl()
-            PCellWrapper._initializeCallbacks()
+        if "tkinter" in sys.modules:
+            if PCellWrapper._tcl is None:
+                PCellWrapper._tcl = tkinter.Tcl()
+                PCellWrapper._initializeCallbacks()
 
-        if self.name() in PCellWrapper._callbackMap.keys():
-            PCellWrapper._tcl.eval(f"setCurrentInstancedName {self.name()}")
+            if self.name() in PCellWrapper._callbackMap.keys():
+                PCellWrapper._tcl.eval(f"setCurrentInstancedName {self.name()}")
 
-            parameters = {}
-            PCellWrapper._parameterTypeList.clear()
-            idx = 0
+                parameters = {}
+                PCellWrapper._parameterTypeList.clear()
+                idx = 0
 
-            for paramDecl in self._paramDecls:
-                parameterValue = parameterValues[idx]
-                parameterType = type(parameterValue)
-                PCellWrapper._parameterTypeList.append(parameterType)
-                if parameterType == PCellWrapper._strType:
-                    if len(parameterValue) == 0:
-                        # Empty parameters breaks the Python-Tcl-Mapping, instead special
-                        # unicode characters are used
-                        parameterValue = chr(0x2717)
-                    else:
-                        # Parameters with spaces or square brackets  breaks the Python-Tcl-Mapping,
-                        # instead special unicode characters are used
-                        parameterValue = parameterValue.replace(" ", f"{chr(0x2709)}")
-                        parameterValue = parameterValue.replace("[", f"{chr(0x2772)}")
-                        parameterValue = parameterValue.replace("]", f"{chr(0x2773)}")
-                parameters[paramDecl.name] = parameterValue
-                idx = idx + 1
-
-            PCellWrapper._tcl.eval(f"setCurrentCellParameters {parameters}")
-
-            #print(f"setCurrentCellParameters: {parameters}")
-
-            deviceCallbacks = PCellWrapper._callbackMap[self.name()]
-            for callback in deviceCallbacks["callbacks"]:
-                for pcellParameter in callback['pcellParameters']:
-                    parameterToUse = self._changedParameter
-                    if parameterToUse is None:
-                        parameterToUse = pcellParameter
-                    else:
-                        if parameterToUse != pcellParameter:
-                            continue
-                    if callback['usePcellParameterAsArgument'] == 'true' or callback['usePcellParameterAsArgument'] == 'yes':
-                        if 'parameterMappings' in callback:
-                            for mapping in callback['parameterMappings']:
-                                paramerMapping = mapping.split(f"{chr(0x279c)}")
-                                if paramerMapping[0] == parameterToUse:
-                                    parameterToUse = paramerMapping[1]
-                        #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {parameterToUse}")
-                        PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
-                    elif 'parameterValue' in callback:
-                        #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {callback['parameterValue']}")
-                        PCellWrapper._tcl.eval(f"{callback['callback']} {callback['parameterValue']}")
-                    else:
-                        #print(f"enter callback {callback['callback']} for cell {self.name()}")
-                        PCellWrapper._tcl.eval(f"{callback['callback']}")
-                    if self._changedParameter is None:
-                        break
-            self._changedParameter = None
-
-            coercedParameters = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
-
-            #print(f"getCurrentCellParameters: {coercedParameters}")
-
-            coercedParameters = coercedParameters.split();
-
-            isValue = False
-            parameterValues.clear();
-            idx = 0
-            for value in coercedParameters:
-                if isValue:
-                    valueType = type(value)
-                    if value == chr(0x2717):
-                        value = ''
-                    else:
-                        value = value.replace(f"{chr(0x2709)}", " ")
-                        value = value.replace(f"{chr(0x2772)}", "[")
-                        value = value.replace(f"{chr(0x2773)}", "]")
-
-                    if PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
-                        value = int(value)
-                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._floatType:
-                        value = float(value)
-                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._strType:
-                        value = str(value)
-                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._boolType:
-                        value = bool(value)
-
-                    parameterValues.append(value)
+                for paramDecl in self._paramDecls:
+                    parameterValue = parameterValues[idx]
+                    parameterType = type(parameterValue)
+                    PCellWrapper._parameterTypeList.append(parameterType)
+                    if parameterType == PCellWrapper._strType:
+                        if len(parameterValue) == 0:
+                            # Empty parameters breaks the Python-Tcl-Mapping, instead special
+                            # unicode characters are used
+                            parameterValue = chr(0x2717)
+                        else:
+                            # Parameters with spaces or square brackets  breaks the Python-Tcl-Mapping,
+                            # instead special unicode characters are used
+                            parameterValue = parameterValue.replace(" ", f"{chr(0x2709)}")
+                            parameterValue = parameterValue.replace("[", f"{chr(0x2772)}")
+                            parameterValue = parameterValue.replace("]", f"{chr(0x2773)}")
+                    parameters[paramDecl.name] = parameterValue
                     idx = idx + 1
-                isValue = not isValue
+
+                PCellWrapper._tcl.eval(f"setCurrentCellParameters {parameters}")
+
+                #print(f"setCurrentCellParameters: {parameters}")
+
+                deviceCallbacks = PCellWrapper._callbackMap[self.name()]
+                for callback in deviceCallbacks["callbacks"]:
+                    for pcellParameter in callback['pcellParameters']:
+                        parameterToUse = self._changedParameter
+                        if parameterToUse is None:
+                            parameterToUse = pcellParameter
+                        else:
+                            if parameterToUse != pcellParameter:
+                                continue
+                        if callback['usePcellParameterAsArgument'] == 'true' or callback['usePcellParameterAsArgument'] == 'yes':
+                            if 'parameterMappings' in callback:
+                                for mapping in callback['parameterMappings']:
+                                    paramerMapping = mapping.split(f"{chr(0x279c)}")
+                                    if paramerMapping[0] == parameterToUse:
+                                        parameterToUse = paramerMapping[1]
+                            #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {parameterToUse}")
+                            PCellWrapper._tcl.eval(f"{callback['callback']} {parameterToUse}")
+                        elif 'parameterValue' in callback:
+                            #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {callback['parameterValue']}")
+                            PCellWrapper._tcl.eval(f"{callback['callback']} {callback['parameterValue']}")
+                        else:
+                            #print(f"enter callback {callback['callback']} for cell {self.name()}")
+                            PCellWrapper._tcl.eval(f"{callback['callback']}")
+                        if self._changedParameter is None:
+                            break
+                self._changedParameter = None
+
+                coercedParameters = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
+
+                #print(f"getCurrentCellParameters: {coercedParameters}")
+
+                coercedParameters = coercedParameters.split();
+
+                isValue = False
+                parameterValues.clear();
+                idx = 0
+                for value in coercedParameters:
+                    if isValue:
+                        valueType = type(value)
+                        if value == chr(0x2717):
+                            value = ''
+                        else:
+                            value = value.replace(f"{chr(0x2709)}", " ")
+                            value = value.replace(f"{chr(0x2772)}", "[")
+                            value = value.replace(f"{chr(0x2773)}", "]")
+
+                        if PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
+                            value = int(value)
+                        elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._floatType:
+                            value = float(value)
+                        elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._strType:
+                            value = str(value)
+                        elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._boolType:
+                            value = bool(value)
+
+                        parameterValues.append(value)
+                        idx = idx + 1
+                    isValue = not isValue
 
         return parameterValues
 
