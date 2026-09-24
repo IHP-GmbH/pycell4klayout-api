@@ -77,6 +77,7 @@ class Polygon(Shape):
         shape = Shape.getCell().shapes(self._shape.layer).insert(movedPolygon)
         self.destroy()
         self._polygon = movedPolygon
+        self._setBBox(movedPolygon.bbox())
         self.set_shape(shape)
         self.addShape()
 
@@ -88,6 +89,7 @@ class Polygon(Shape):
         shape = Shape.getCell().shapes(self.getShape().layer).insert(transformedPolygon)
         self.destroy()
         self._polygon = transformedPolygon
+        self._setBBox(transformedPolygon.bbox())
         self.set_shape(shape)
         self.addShape()
 

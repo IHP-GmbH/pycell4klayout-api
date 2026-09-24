@@ -90,6 +90,7 @@ class Path(Shape):
         shape = Shape.getCell().shapes(self._shape.layer).insert(movedPath)
         self.destroy()
         self._path = movedPath
+        self._setBBox(movedPath.bbox())
         self.set_shape(shape)
         self.addShape()
 
@@ -101,6 +102,7 @@ class Path(Shape):
         shape = Shape.getCell().shapes(self.getShape().layer).insert(transformedPath)
         self.destroy()
         self._path = transformedPath
+        self._setBBox(transformedPath.bbox())
         self.set_shape(shape)
         self.addShape()
 

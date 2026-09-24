@@ -35,13 +35,22 @@ class Shape(PhysicalComponent):
     def __init__(self, layer: Layer, bbox: Box):
         self._shape = None  # pya.Shape
         self._layer = layer
-        self._bbox = bbox
+
+        self._setBBox(bbox)
         self._net = None
         self._pin = None
 
         import cni.dlo
         impl = cni.dlo.PyCellContext.getCurrentPyCellContext().impl
         impl.addShape(self)
+
+    def _setBBox(self, bbox) -> None:
+        if isinstance(bbox, Box):
+            self._bbox = bbox
+        elif isinstance(bbox, pya.DBox):
+            self._bbox = Box(bbox.left, bbox.bottom, bbox.right, bbox.top)
+        else:
+            raise NotImplementedError()
 
     def destroy(self) -> None:
         import cni.dlo
