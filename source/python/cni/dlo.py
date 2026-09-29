@@ -337,7 +337,9 @@ class PCellWrapper(pya.PCellDeclaration):
                         if callback['usePcellParameterAsArgument'] == 'true' or callback['usePcellParameterAsArgument'] == 'yes':
                             if 'parameterMappings' in callback:
                                 for mapping in callback['parameterMappings']:
-                                    paramerMapping = mapping.split(f"{chr(0x279c)}")
+                                    # "from->to". U+279C is the legacy separator and
+                                    # stays accepted so existing callbacks.json keep working.
+                                    paramerMapping = re.split(r"->|\u279c", mapping)
                                     if paramerMapping[0] == parameterToUse:
                                         parameterToUse = paramerMapping[1]
                             #print(f"enter callback {callback['callback']} for cell {self.name()} parameter {parameterToUse}")
