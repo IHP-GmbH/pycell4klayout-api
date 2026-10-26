@@ -240,11 +240,19 @@ class PCellWrapper(pya.PCellDeclaration):
                 for key, value in PCellWrapper._tech.getTechParams().items():
                     parameters[key] = value
 
-                PCellWrapper._tcl.eval(f"setTechParameters {parameters}")
+                tclDict = PCellWrapper._dict2TclDict(parameters)
+                PCellWrapper._tcl.eval(f"setTechParameters {{{tclDict}}}")
                 PCellWrapper._tcl.eval(f"setCniPythonPath \"{os.path.normpath(os.path.dirname(__file__))}\"")
 
             except Exception as exc:
                 raise Exception(f"Invalid Json syntax: '{exc}' in {callbacksDefPath}")
+
+    @staticmethod
+    def _dict2TclDict(dict):
+        args = []
+        for key, value in dict.items():
+            args.extend((key, value))
+        return PCellWrapper._tcl.call("dict", "create", *args)
 
     def _printTraceBack(self):
         lines = traceback.format_exc().splitlines()
@@ -302,28 +310,15 @@ class PCellWrapper(pya.PCellDeclaration):
                 parameters = {}
                 PCellWrapper._parameterTypeList.clear()
                 idx = 0
-
                 for paramDecl in self._paramDecls:
                     parameterValue = parameterValues[idx]
                     parameterType = type(parameterValue)
                     PCellWrapper._parameterTypeList.append(parameterType)
-                    if parameterType == PCellWrapper._strType:
-                        if len(parameterValue) == 0:
-                            # Empty parameters breaks the Python-Tcl-Mapping, instead special
-                            # unicode characters are used
-                            parameterValue = chr(0x2717)
-                        else:
-                            # Parameters with spaces or square brackets  breaks the Python-Tcl-Mapping,
-                            # instead special unicode characters are used
-                            parameterValue = parameterValue.replace(" ", f"{chr(0x2709)}")
-                            parameterValue = parameterValue.replace("[", f"{chr(0x2772)}")
-                            parameterValue = parameterValue.replace("]", f"{chr(0x2773)}")
                     parameters[paramDecl.name] = parameterValue
                     idx = idx + 1
 
-                PCellWrapper._tcl.eval(f"setCurrentCellParameters {parameters}")
-
-                #print(f"setCurrentCellParameters: {parameters}")
+                tclDict = PCellWrapper._dict2TclDict(parameters)
+                PCellWrapper._tcl.eval(f"setCurrentCellParameters {{{tclDict}}}")
 
                 deviceCallbacks = PCellWrapper._callbackMap[self.name()]
                 for callback in deviceCallbacks["callbacks"]:
@@ -354,42 +349,33 @@ class PCellWrapper(pya.PCellDeclaration):
                             break
                 self._changedParameter = None
 
-                coercedParameters = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
+                cellParameters = {}
+                result = PCellWrapper._tcl.eval(f"getCurrentCellParameters")
+                items = PCellWrapper._tcl.splitlist(result)
+                cellParameters = dict(zip(items[::2], items[1::2]))
 
-                #print(f"getCurrentCellParameters: {coercedParameters}")
-
-                coercedParameters = coercedParameters.split();
-
-                isValue = False
                 parameterValues.clear();
                 idx = 0
-                for value in coercedParameters:
-                    if isValue:
-                        valueType = type(value)
-                        if value == chr(0x2717):
-                            value = ''
-                        else:
-                            value = value.replace(f"{chr(0x2709)}", " ")
-                            value = value.replace(f"{chr(0x2772)}", "[")
-                            value = value.replace(f"{chr(0x2773)}", "]")
+                for key, value in cellParameters.items():
+                    valueType = type(value)
 
-                        # NOTE: the callback returns the value the way it is spelled in the
-                        #       parameter definition, so a parameter declared as '0.15u' comes
-                        #       back scaled ('6.0u'), which the builtin conversions reject.
-                        if PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
-                            value = int(Numeric(value))
-                        elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._floatType:
-                            value = float(Numeric(value))
-                        elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._strType:
-                            value = str(value)
-                        elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._boolType:
-                            value = bool(value)
+                    # NOTE: the callback returns the value the way it is spelled in the
+                    #       parameter definition, so a parameter declared as '0.15u' comes
+                    #       back scaled ('6.0u'), which the builtin conversions reject.
+                    if PCellWrapper._parameterTypeList[idx] == PCellWrapper._intType:
+                        value = int(Numeric(value))
+                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._floatType:
+                        value = float(Numeric(value))
+                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._strType:
+                        value = str(value)
+                    elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._boolType:
+                        value = bool(value)
 
-                        parameterValues.append(value)
-                        idx = idx + 1
-                    isValue = not isValue
+                    parameterValues.append(value)
+                    idx = idx + 1
 
         return parameterValues
 
     def wants_lazy_evaluation(self):
         return True
+
