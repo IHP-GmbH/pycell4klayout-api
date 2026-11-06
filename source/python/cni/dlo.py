@@ -369,7 +369,7 @@ class PCellWrapper(pya.PCellDeclaration):
                     elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._strType:
                         value = str(value)
                     elif PCellWrapper._parameterTypeList[idx] == PCellWrapper._boolType:
-                        value = bool(value)
+                        value = bool(value != "" and value != "0")
 
                     parameterValues.append(value)
                     idx = idx + 1
