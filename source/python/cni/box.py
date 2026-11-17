@@ -199,6 +199,8 @@ class Box(object):
         movedBox = pya.DTrans(dx, dy) * self.box
         import cni.shape
         shape = cni.shape.Shape.getCell().shapes(self.__rect._shape.layer).insert(movedBox)
+        if self.__rect.getShape().has_prop_id():
+            shape.prop_id = self.__rect.getShape().prop_id
         self.destroy()
         self.__rect._shape = shape
         self.box = movedBox
@@ -306,6 +308,8 @@ class Box(object):
         transformedBox = self.box.transformed(transform.transform)
         import cni.shape
         shape = cni.shape.Shape.getCell().shapes(self.__rect._shape.layer).insert(transformedBox)
+        if self.__rect.getShape().has_prop_id():
+            shape.prop_id = self.__rect.getShape().prop_id
         self.destroy()
         self.__rect._shape = shape
         self.box = transformedBox
