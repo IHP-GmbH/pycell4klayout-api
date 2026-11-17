@@ -81,6 +81,56 @@ class PinGeometryTest(unittest.TestCase):
         self.assertFalse(rect.getShape().has_prop_id())
         self.assertEqual(rect.getShape().dbox, pya.DBox(-7, 2, -4, 4))
 
+    def test_pin_geometry_follows_cell_shapes(self):
+        pin = self.impl.addPin('S', 'SOURCE', Box(1, 2, 3, 5), self.layer)
+        shapes = self.impl.getShapes()
+        self.assertEqual(len(shapes), 1)
+        self.assertIs(shapes[0].getPin(), pin)
+        properties = {
+            'PIN_INFO__VERSION': '0.1',
+            'PIN_INFO__LIB_NAME': 'test_lib',
+            'PIN_INFO__CELL_NAME': 'test_cell',
+            'PIN_INFO__PIN_NAME': 'S',
+            'PIN_INFO__TERM_NAME': 'SOURCE',
+        }
+        expected = pya.DBox(1, 2, 3, 5)
+        for orientation in (Orientation.R0, Orientation.R90, Orientation.MX, Orientation.MY):
+            transform = Transform(0, 0, orientation)
+            for shape in self.impl.getShapes():
+                shape.transform(transform)
+                shape.moveBy(1.25, 2.5)
+            expected = pya.DTrans(1.25, 2.5) * expected.transformed(transform.transform)
+            self.assertEqual(pin.getBBox().box, expected)
+            self.assertEqual(shapes[0].getShape().dbox, expected)
+            self.assertEqual(shapes[0].getShape().properties(), properties)
+            self.assertEqual(self.cell.shapes(self.layer.number).size(), 1)
+
+    def test_pin_does_not_take_ownership_of_input_box(self):
+        box = Box(1, 2, 3, 5)
+        original = Rect(self.layer, box)
+        pin = self.impl.addPin('S', 'S', box, self.layer)
+        for shape in self.impl.getShapes():
+            shape.moveBy(10.0, 20.0)
+        expected = pya.DBox(11, 22, 13, 25)
+        self.assertEqual(original.getShape().dbox, expected)
+        self.assertEqual(pin.getBBox().box, expected)
+        self.assertEqual(self.cell.shapes(self.layer.number).size(), 2)
+        for shape in self.cell.shapes(self.layer.number).each():
+            self.assertEqual(shape.dbox, expected)
+
+    def test_multiple_pin_boxes_remain_tracked(self):
+        pin = self.impl.addPin('S', 'S', Box(1, 2, 3, 5), self.layer)
+        second_layer = Layer('Metal2', 'pin')
+        pin.setBBox(Box(6, 7, 8, 9), second_layer)
+        shapes = self.impl.getShapes()
+        self.assertEqual(len(shapes), 2)
+        for shape in shapes:
+            self.assertIs(shape.getPin(), pin)
+            shape.moveBy(1.0, 2.0)
+            self.assertEqual(shape.getShape().property('PIN_INFO__PIN_NAME'), 'S')
+        self.assertEqual(next(self.cell.shapes(self.layer.number).each()).dbox, pya.DBox(2, 4, 4, 7))
+        self.assertEqual(pin.getBBox().box, pya.DBox(7, 9, 9, 11))
+
 
 if __name__ == '__main__':
     unittest.main()
