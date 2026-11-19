@@ -19,22 +19,20 @@
 from functools import singledispatchmethod
 
 from cni.shape import Shape
+from cni.rect import Rect
 from cni.term import Term
 from cni.box import Box
 from cni.layer import Layer
 from cni.ulist import ulist
-from cni.tech import Tech
 
 from cni.constants import (
     PROPERTY_KEY__PIN_INFO__VERSION,
-    PROPERTY_KEY__PIN_INFO__LIB_NAME ,
+    PROPERTY_KEY__PIN_INFO__LIB_NAME,
     PROPERTY_KEY__PIN_INFO__CELL_NAME,
     PROPERTY_KEY__PIN_INFO__PIN_NAME,
     PROPERTY_KEY__PIN_INFO__TERM_NAME,
     PROPERTY_VALUE__PIN_INFO__CURRENT_VERSION,
 )
-
-import pya
 
 
 class Pin(object):
@@ -106,7 +104,9 @@ class Pin(object):
         return self._name
 
     def setBBox(self, box: Box, layer: Layer) -> None:
-        self._bbox = box
+        # A Box has one owning Rect. Do not take ownership of a caller's
+        # geometry, which may also be moved through DloGen.getShapes().
+        self._bbox = Box(box.left, box.bottom, box.right, box.top)
         self._layers.append(layer)
 
         import cni.dlo
@@ -123,12 +123,12 @@ class Pin(object):
             PROPERTY_KEY__PIN_INFO__TERM_NAME: self.getTerm().getName(),
         }
         
-        dbu = ctx.tech.dataBaseUnits
-        pya_box = pya.DBox(box.left, box.bottom, box.right, box.top).to_itype(dbu)
-        shape = cell.shapes(layer.number).insert(pya.BoxWithProperties(pya_box, props))
-        
-        self._shapes.append(shape)        
-    
+        # Rect registers with the cell, so origin shifts and other CNI
+        # transformations move both the pin geometry and its metadata.
+        shape = Rect(layer, self._bbox)
+        self.addShape(shape)
+        shape.getShape().set_properties(props)
+
     def getBBox(self) -> Box:
         return self._bbox
 
